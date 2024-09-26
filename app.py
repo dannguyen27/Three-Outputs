@@ -58,7 +58,19 @@ def generate_story_text_and_queries(user_input, temperature):
         )
         song_query = song_query_response['choices'][0]['message']['content'].strip()
 
-        return story, image_query, song_query
+        # Further simplify the query
+        simplify_query_prompt = f"Simplify the following query to be used as a search term for finding a song on Spotify: {song_query}"
+        simplified_query_response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": simplify_query_prompt}],
+            max_tokens=20,
+            temperature=temperature
+        )
+        simplified_song_query = simplified_query_response['choices'][0]['message']['content'].strip()
+
+        
+
+        return story, image_query, simplified_song_query
     except openai.error.RateLimitError:
         print("Rate limit exceeded. Waiting for 60 seconds...")
         time.sleep(60)
@@ -79,14 +91,17 @@ def fetch_unsplash_image(query):
         return None
 
 def fetch_spotify_track(query):
-    results = spotify.search(q=query, type='track', limit=1)
-
-    if results['tracks']['items']:
-        track = results['tracks']['items'][0]
-        return track['uri']
-    else:
-        logging.error("No suitable track found for query.")
-        return None
+    try:
+        results = spotify.search(q=query, type='track', limit=1)
+        if results['tracks']['items']:
+            track = results['tracks']['items'][0]
+            return track['uri']
+        else:
+            logging.error("No suitable track found for query.")
+            return None
+    except spotipy.exceptions.SpotifyException as e:
+        logging.error(f"Spotify search failed with error: {e}")
+        return None  # Or return a default song URI if you have one
 
 @app.route('/')
 def index():
