@@ -44,7 +44,18 @@
 						<div class="mb-3">
 							<textarea class="form-control" name="story_prompt" rows="5" placeholder="Type your story or theme here..."></textarea>
 						</div>
-						<button type="submit" class="btn btn-primary">Generate Outputs</button>
+                        <div class="mb-3">
+                            <label for="temperature">Creativity:</label>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Strict</span>
+                                <input type="range" id="temperature" name="temperature" min="0.0" max="1.0" step="0.1" value="0.8" onchange="updateTempValue(this.value)" style="flex-grow: 1; margin: 0 10px;">
+                                <span>Creative</span>
+                            </div>
+                            <div style="margin-top: 5px;">
+                                <span id="tempValue"> Default Value 0.8</span>
+                            </div>
+                        </div>
+						<button type="submit" class="btn btn-primary" onclick="scrollToSection()">Generate Outputs</button>
 					</form>
 				</div>
 			</section>

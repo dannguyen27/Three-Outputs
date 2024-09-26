@@ -203,6 +203,14 @@
 				document.getElementById('output-story').textContent = 'An error occurred. Please try again.';
 			});
 		});
-	
-
+		
 })(jQuery);
+
+
+function scrollToSection() {
+	document.getElementById('two').scrollIntoView({ behavior: 'smooth' });
+}
+
+function updateTempValue(value) {
+	document.getElementById('tempValue').textContent = value;
+}
