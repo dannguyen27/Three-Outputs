@@ -25,35 +25,45 @@ spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(cl
 
 @sleep_and_retry
 @limits(calls=20, period=ONE_MINUTE)
-def generate_story_text(user_input, temperature):
+def generate_story_text_and_queries(user_input, temperature):
     try:
+        # Generate the story
         story_prompt = f"Write a detailed and creative short story based on the theme: {user_input}. Make sure the story has a clear ending and is cohesive and flowing."
         story_response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": story_prompt}],
-            max_tokens=500,  # Increase max tokens to give more space for completion
+            max_tokens=500,
             temperature=temperature
         )
         story = story_response['choices'][0]['message']['content'].strip()
 
-        # Check if the story seems to end mid-sentence
-        if not story.endswith(('.', '!', '?', '"')):
-            # Add a follow-up prompt to complete the sentence
-            followup_prompt = f"Continue and conclude the following story: {story}"
-            followup_response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": followup_prompt}],
-                max_tokens=50,  # Smaller token limit for just finishing the story
-                temperature=temperature
-            )
-            followup_text = followup_response['choices'][0]['message']['content'].strip()
-            story += " " + followup_text
+        # Generate a query for the Unsplash image
+        image_query_prompt = f"Based on the following story, generate a general query to find an appropriate image, 3 words max: {story}"
+        image_query_response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": image_query_prompt}],
+            max_tokens=50,
+            temperature=temperature
+        )
+        image_query = image_query_response['choices'][0]['message']['content'].strip()
+        logging.info(f"Generated image query: {image_query}")
 
-        return story
+        # Generate a query for the Spotify song
+        song_query_prompt = f"Based on the following story, describe the type of song (including mood, genre, and any themes) that would be most suitable as a soundtrack: {story}"
+        song_query_response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": song_query_prompt}],
+            max_tokens=50,
+            temperature=temperature
+        )
+        song_query = song_query_response['choices'][0]['message']['content'].strip()
+
+        return story, image_query, song_query
     except openai.error.RateLimitError:
-        logging.error("Rate limit exceeded. Waiting for 60 seconds...")
+        print("Rate limit exceeded. Waiting for 60 seconds...")
         time.sleep(60)
-        return generate_story_text(user_input, temperature)
+        return generate_story_text_and_queries(user_input, temperature)
+
 
 
 def fetch_unsplash_image(query):
@@ -84,21 +94,24 @@ def index():
 
 @app.route('/generate_story', methods=['POST'])
 def generate_story():
-    data = request.get_json()
+    data = request.get_json()  # Parse JSON data
     user_input = data.get('story_prompt')
-    temperature = float(data.get('temperature', 0.7))
+    temperature = float(data.get('temperature', 0.7))  # Default to 0.7 if not provided
 
     try:
-        story = generate_story_text(user_input, temperature)
-        image_url = fetch_unsplash_image(user_input)
-        spotify_uri = fetch_spotify_track(user_input)
+        # Generate the story, image query, and song query using GPT
+        story, image_query, song_query = generate_story_text_and_queries(user_input, temperature)
+
+        # Fetch an image from Unsplash based on the GPT-generated image query
+        image_url = fetch_unsplash_image(image_query)
+
+        # Fetch a song from Spotify based on the GPT-generated song query
+        spotify_uri = fetch_spotify_track(song_query)
 
         return jsonify({'story': story, 'image_url': image_url, 'spotify_uri': spotify_uri})
-    except openai.error.InvalidRequestError:
-        logging.error("API quota exceeded.")
+    except openai.error.InvalidRequestError as e:
         return jsonify({'error': 'API quota exceeded. Please try again later.'}), 429
     except requests.RequestException as e:
-        logging.error(f"Failed to fetch image or song: {str(e)}")
         return jsonify({'story': story, 'error': 'Failed to fetch image or song.'}), 500
 
 if __name__ == '__main__':

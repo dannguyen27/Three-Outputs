@@ -198,11 +198,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
     const storyOutput = document.getElementById('output-story');
     const imageContainer = document.getElementById('output-image');
-    const spotifyPlayer = document.getElementById('spotify-player');
+    const spotifyContainer = document.getElementById('spotify-player');
+    const startOverButton = document.getElementById('start-over-button');
+    const storyPromptTextarea = document.querySelector('textarea[name="story_prompt"]');
 
     form.addEventListener('submit', function(event) {
         event.preventDefault();
-        const storyPrompt = document.querySelector('textarea[name="story_prompt"]').value;
+
+        // Clear previous outputs
+        storyOutput.textContent = "Generating your story...";
+        imageContainer.style.display = 'none';
+        imageContainer.src = ""; // Clear image
+        spotifyContainer.innerHTML = ""; // Clear Spotify player
+
+        const storyPrompt = storyPromptTextarea.value;
         const temperature = document.querySelector('input[name="temperature"]').value;
 
         fetch('/generate_story', {
@@ -220,21 +229,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Display the fetched image if available
                 if (data.image_url) {
                     imageContainer.src = data.image_url;
-                    imageContainer.style.display = 'block';
+                    imageContainer.style.display = 'block'; // Show the image
                 }
 
-                // Embed the fetched Spotify song if available
+                // Display the Spotify player if a URI is provided
                 if (data.spotify_uri) {
-                    spotifyPlayer.innerHTML = `<iframe src="https://open.spotify.com/embed/track/${data.spotify_uri.split(':')[2]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>`;
-                } else {
-                    spotifyPlayer.innerHTML = 'No suitable song found.';
+                    spotifyContainer.innerHTML = `
+                        <iframe src="https://open.spotify.com/embed/track/${data.spotify_uri.split(':').pop()}" 
+                        width="300" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+                    `;
                 }
             } else if (data.error) {
                 storyOutput.textContent = data.error;
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            storyOutput.textContent = 'An error occurred. Please try again.';
+        });
+    });
+
+    // "Start Over" button functionality
+    startOverButton.addEventListener('click', function() {
+        // Clear the story prompt input and all outputs
+        storyPromptTextarea.value = "";
+        storyOutput.textContent = "Your generated story will appear here...";
+        imageContainer.style.display = 'none';
+        imageContainer.src = "";
+        spotifyContainer.innerHTML = "";
+
+        // Scroll back to the story generation section
+        document.querySelector('#one').scrollIntoView({ behavior: 'smooth' });
     });
 });
-
-
