@@ -3934,4 +3934,45 @@ input, select, textarea {
 			box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 			transition: background-color 0.3s ease;
 		}
+
+		.output-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+			margin-top: 20px;
+		}
+		
+		.story-container {
+			width: 100%;
+			margin-bottom: 20px;
+		}
+		
+		.media-container {
+			display: flex;
+			justify-content: center;
+			align-items: flex-start;
+			width: 100%;
+		}
+		
+		.image-container {
+			width: 45%; /* Adjust the width as needed */
+			margin-right: 5%;
+		}
+		
+		.spotify-container {
+			width: 45%; /* Adjust the width as needed */
+		}
+		
+		#output-image {
+			width: 100%; /* Ensure the image fills the container */
+			height: auto;
+			border-radius: 8px; /* Add rounded corners if desired */
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+		}
+		
+		#spotify-player {
+			/* Add styling for the Spotify player container if needed */
+		}
+		
 		

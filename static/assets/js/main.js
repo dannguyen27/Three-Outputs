@@ -182,28 +182,7 @@
 
 				}
 			});
-
-		// New JavaScript code for handling story generation
-		$('form').on('submit', function(event) {
-			event.preventDefault(); // Prevent the form from submitting traditionally
-	
-			const formData = new FormData(this);
-	
-			fetch('/generate_story', {
-				method: 'POST',
-				body: formData,
-			})
-			.then(response => response.json())
-			.then(data => {
-				// Assuming you have an element with id 'output-story' to display the story
-				document.getElementById('output-story').textContent = data.story;
-			})
-			.catch(error => {
-				console.error('Error:', error);
-				document.getElementById('output-story').textContent = 'An error occurred. Please try again.';
-			});
-		});
-		
+			
 })(jQuery);
 
 
@@ -214,3 +193,48 @@ function scrollToSection() {
 function updateTempValue(value) {
 	document.getElementById('tempValue').textContent = value;
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const storyOutput = document.getElementById('output-story');
+    const imageContainer = document.getElementById('output-image');
+    const spotifyPlayer = document.getElementById('spotify-player');
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const storyPrompt = document.querySelector('textarea[name="story_prompt"]').value;
+        const temperature = document.querySelector('input[name="temperature"]').value;
+
+        fetch('/generate_story', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ story_prompt: storyPrompt, temperature: temperature }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.story) {
+                storyOutput.textContent = data.story;
+
+                // Display the fetched image if available
+                if (data.image_url) {
+                    imageContainer.src = data.image_url;
+                    imageContainer.style.display = 'block';
+                }
+
+                // Embed the fetched Spotify song if available
+                if (data.spotify_uri) {
+                    spotifyPlayer.innerHTML = `<iframe src="https://open.spotify.com/embed/track/${data.spotify_uri.split(':')[2]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>`;
+                } else {
+                    spotifyPlayer.innerHTML = 'No suitable song found.';
+                }
+            } else if (data.error) {
+                storyOutput.textContent = data.error;
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+});
+
+
