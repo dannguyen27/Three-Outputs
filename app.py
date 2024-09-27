@@ -115,6 +115,19 @@ def generate_story():
     user_input = data.get('story_prompt')
     temperature = float(data.get('temperature', 0.7))  # Default to 0.7 if not provided
 
+    # Check if the necessary API keys are loaded
+    if not openai.api_key:
+        logging.error("OpenAI API key is missing.")
+        return jsonify({'error': 'Internal server error: OpenAI API key is missing.'}), 500
+
+    if not UNSPLASH_API_KEY:
+        logging.error("Unsplash API key is missing.")
+        return jsonify({'error': 'Internal server error: Unsplash API key is missing.'}), 500
+
+    if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
+        logging.error("Spotify API credentials are missing.")
+        return jsonify({'error': 'Internal server error: Spotify API credentials are missing.'}), 500
+
     try:
         # Generate the story, image query, and song query using GPT
         story, image_query, song_query = generate_story_text_and_queries(user_input, temperature)
@@ -126,10 +139,18 @@ def generate_story():
         spotify_uri = fetch_spotify_track(song_query)
 
         return jsonify({'story': story, 'image_url': image_url, 'spotify_uri': spotify_uri})
+    
     except openai.error.InvalidRequestError as e:
+        logging.error(f"OpenAI API request failed: {e}")
         return jsonify({'error': 'API quota exceeded. Please try again later.'}), 429
+    
     except requests.RequestException as e:
+        logging.error(f"Request to external API failed: {e}")
         return jsonify({'story': story, 'error': 'Failed to fetch image or song.'}), 500
-
+    
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+        return jsonify({'error': 'An unexpected error occurred. Please try again later.'}), 500
+        
 if __name__ == '__main__':
     app.run(debug=True, port=5003)
