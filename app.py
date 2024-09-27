@@ -132,4 +132,4 @@ def generate_story():
         return jsonify({'story': story, 'error': 'Failed to fetch image or song.'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5003)
