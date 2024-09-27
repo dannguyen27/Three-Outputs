@@ -7,6 +7,8 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy
 from ratelimit import limits, sleep_and_retry
 import logging
+from dotenv import load_dotenv
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
