@@ -40,7 +40,7 @@ def generate_story_text_and_queries(user_input, temperature):
         story = story_response['choices'][0]['message']['content'].strip()
 
         # Generate a query for the Unsplash image
-        image_query_prompt = f"Based on the following story, generate a general query to find an appropriate image, 3 words max: {story}"
+        image_query_prompt = f"Based on the following story, generate a general query to find an appropriate image, 2 words max: {story}"
         image_query_response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": image_query_prompt}],
